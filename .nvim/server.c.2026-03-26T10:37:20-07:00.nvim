@@ -36,28 +36,28 @@ void *handle_client(void *arg) {
   int cfd = client->cfd;
   int client_id = client->client_id;
   free(client);
-
+ 
   char buf[BUF_SIZE];
   ssize_t num_read;
-
+ 
   while ((num_read = read(cfd, buf, BUF_SIZE - 1)) > 0) {
     buf[num_read] = '\0';
-
+ 
     if (num_read > 0 && buf[num_read - 1] == '\n') {
       buf[num_read - 1] = '\0';
     }
-
+ 
     pthread_mutex_lock(&count_mutex);
     total_message_count++;
     int msg_num = total_message_count;
     pthread_mutex_unlock(&count_mutex);
-
+ 
     printf("Msg # %3d; Client ID %d: %s\n", msg_num, client_id, buf);
   }
-
+ 
   close(cfd);
   printf("Ending thread for client %d\n", client_id);
-
+ 
   return NULL;
 }
 
@@ -83,33 +83,33 @@ int main() {
     handle_error("listen");
   }
 
-  for (;;) {
+for (;;) {
     struct sockaddr_in client_addr;
     socklen_t client_addr_len = sizeof(struct sockaddr_in);
-
+ 
     int cfd = accept(sfd, (struct sockaddr *)&client_addr, &client_addr_len);
     if (cfd == -1) {
       handle_error("accept");
     }
-
+ 
     pthread_mutex_lock(&client_id_mutex);
     int this_client_id = client_id_counter++;
     pthread_mutex_unlock(&client_id_mutex);
-
+ 
     printf("New client created! ID %d on socket FD %d\n", this_client_id, cfd);
-
+ 
     struct client_info *info = malloc(sizeof(struct client_info));
     if (info == NULL) {
       handle_error("malloc");
     }
     info->cfd = cfd;
     info->client_id = this_client_id;
-
+ 
     pthread_t tid;
     if (pthread_create(&tid, NULL, handle_client, info) != 0) {
       handle_error("pthread_create");
     }
-
+ 
     pthread_detach(tid);
   }
 
